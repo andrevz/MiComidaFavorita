@@ -6,20 +6,33 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../config/firebase";
 
 
-
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [submitted, setSubmitted] = useState(false);
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
   const navigation = useNavigation();
 
+  const veryfiedEmail = /^\S+@\S+\.\S+$/.test(email);
+  const veryfiedPassword = Boolean(password.trim());
+  const isValidForm = veryfiedEmail && veryfiedPassword;
+
+  const emailErrorMessage = submitted && !veryfiedEmail ? 'Formato de email invalido' : '';
+  const passwordErrorMessage = submitted && !veryfiedPassword ? 'El campo es requerido' : '';
+
   const handleLogin = async () => {
+    setSubmitted(true);
+
+    if (!isValidForm) {
+      return;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       navigation.dispatch(StackActions.replace('Home'));
     } catch (error) {
-      setError(`Error al iniciar sesión: ${error}`);
+      setLoginError(`Error al iniciar sesión: ${error}`);
     }
   };
 
@@ -28,19 +41,22 @@ export default function LoginScreen() {
       <Text h3 style={styles.title}>Mi Comida Favorita</Text>
       <Input
         placeholder="Email"
+        errorMessage={emailErrorMessage}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
       />
       <Input
         placeholder="Contraseña"
+        errorMessage={passwordErrorMessage}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      {error && <Text style={styles.error}>{error}</Text>}
+      {loginError && <Text style={styles.error}>{loginError}</Text>}
       <Button
         title="Iniciar Sesión"
+        disabled={submitted && !isValidForm}
         onPress={handleLogin}
         containerStyle={styles.button}
       />
