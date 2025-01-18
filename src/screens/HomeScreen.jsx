@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { StackActions, useNavigation } from "@react-navigation/native";
 import { Button, Input, Text } from "@rneui/themed";
 import { signOut } from "firebase/auth";
@@ -8,6 +8,8 @@ import { auth, db } from "../config/firebase";
 
 
 export default function HomeScreen() {
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [profile, setProfile] = useState({
     nombre: '',
     apellido: '',
@@ -21,6 +23,8 @@ export default function HomeScreen() {
   }, []);
 
   const loadProfile = async () => {
+    setIsLoadingProfile(true);
+
     try {
       const docRef = doc(db, 'usuarios', auth.currentUser.uid);
       const docSnap = await getDoc(docRef);
@@ -30,16 +34,22 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error(`Error al cargar el perfil: ${error}`);
+    } finally {
+      setIsLoadingProfile(false);
     }
   };
 
   const handleUpdate = async () => {
+    setIsUpdating(true);
+
     try {
       await setDoc(doc(db, 'usuarios', auth.currentUser.uid), profile);
       alert('Perfil actualizado exitosamente');
     } catch (error) {
       console.error(`Error al atualizar el perfil: ${error}`);
       alert('Error al actualizar perfil');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -55,6 +65,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text h4 style={styles.title}>Mi Perfil</Text>
+      {isLoadingProfile && <ActivityIndicator size="large" color="#0000ff" />}
       <Input
         placeholder="Nombre"
         value={profile.nombre}
@@ -72,12 +83,15 @@ export default function HomeScreen() {
       />
       <Button
         title="Actualizar Perfil"
+        disabled={isUpdating}
+        loading={isUpdating}
         onPress={handleUpdate}
         containerStyle={styles.button}
       />
       <Button
         title="Cerrar Sesión"
         type="outline"
+        disabled={isUpdating}
         onPress={handleSignout}
         containerStyle={styles.button}
       />

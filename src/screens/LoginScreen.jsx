@@ -8,6 +8,7 @@ import { auth } from "../config/firebase";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [password, setPassword] = useState('');
@@ -20,11 +21,14 @@ export default function LoginScreen() {
 
   const emailErrorMessage = submitted && !veryfiedEmail ? 'Formato de email invalido' : '';
   const passwordErrorMessage = submitted && !veryfiedPassword ? 'El campo es requerido' : '';
+  const loginButtonDisabled = submitted && !isValidForm;
 
   const handleLogin = async () => {
+    setIsLoading(true);
     setSubmitted(true);
 
     if (!isValidForm) {
+      setIsLoading(false);
       return;
     }
 
@@ -33,6 +37,8 @@ export default function LoginScreen() {
       navigation.dispatch(StackActions.replace('Home'));
     } catch (error) {
       setLoginError(`Error al iniciar sesión: ${error}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,13 +62,15 @@ export default function LoginScreen() {
       {loginError && <Text style={styles.error}>{loginError}</Text>}
       <Button
         title="Iniciar Sesión"
-        disabled={submitted && !isValidForm}
+        disabled={isLoading || loginButtonDisabled}
+        loading={isLoading}
         onPress={handleLogin}
         containerStyle={styles.button}
       />
       <Button
         title="Registrarse"
         type="outline"
+        disabled={isLoading}
         onPress={() => navigation.navigate('Register')}
         containerStyle={styles.button}
       />

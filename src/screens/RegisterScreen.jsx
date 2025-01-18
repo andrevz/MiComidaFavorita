@@ -9,6 +9,7 @@ import { auth } from "../config/firebase";
 export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -17,8 +18,10 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     setSubmitted(true);
+    setIsLoading(true);
 
     if (!isEmptyObject(validateForm())) {
+      setIsLoading(false);
       return;
     }
 
@@ -27,6 +30,8 @@ export default function RegisterScreen() {
       navigation.dispatch(StackActions.replace('Home'));
     } catch (error) {
       setRegisterError(`Error al iniciar sesión: ${error}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,13 +107,15 @@ export default function RegisterScreen() {
       {registerError && <Text style={styles.error}>{registerError}</Text>}
       <Button
         title="Registrarse"
-        disabled={registerButtonDisabled}
+        disabled={isLoading || registerButtonDisabled}
+        loading={isLoading}
         onPress={handleRegister}
         containerStyle={styles.button}
       />
       <Button
         title="Volver al Login"
         type="outline"
+        disabled={isLoading}
         onPress={() => navigation.goBack()}
         containerStyle={styles.button}
       />
