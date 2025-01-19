@@ -4,30 +4,30 @@ import { StackActions, useNavigation } from "@react-navigation/native";
 import { Button, Input, Text } from "@rneui/themed";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../config/firebase";
+import { isValidEmailFormat, isEmptyObject } from "../utils/validators";
 
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [submitted, setSubmitted] = useState(false);
   const [password, setPassword] = useState('');
 
   const navigation = useNavigation();
 
-  const veryfiedEmail = /^\S+@\S+\.\S+$/.test(email);
-  const veryfiedPassword = Boolean(password.trim());
-  const isValidForm = veryfiedEmail && veryfiedPassword;
-
-  const emailErrorMessage = submitted && !veryfiedEmail ? 'Formato de email invalido' : '';
-  const passwordErrorMessage = submitted && !veryfiedPassword ? 'El campo es requerido' : '';
-  const loginButtonDisabled = submitted && !isValidForm;
+  const handleInputChange = (value, setValue) => {
+    if (!isDirty) {
+      setIsDirty(true);
+    }
+    setValue(value);
+  }
 
   const handleLogin = async () => {
     setIsLoading(true);
-    setSubmitted(true);
+    setIsDirty(true);
 
-    if (!isValidForm) {
+    if (!isEmptyObject(validateForm())) {
       setIsLoading(false);
       return;
     }
@@ -42,21 +42,40 @@ export default function LoginScreen() {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!email) {
+      errors.email = 'El email es requerido';
+    } else if (!isValidEmailFormat(email)) {
+      errors.email = 'Formato de email inválido'
+    }
+
+    if (!password) {
+      errors.password = 'La contraseña es requerida';
+    }
+
+    return errors;
+  };
+
+  const validationErrors = isDirty ? validateForm() : {};
+  const loginButtonDisabled = isDirty && !isEmptyObject(validationErrors);
+
   return (
     <View style={styles.container}>
       <Text h3 style={styles.title}>Mi Comida Favorita</Text>
       <Input
         placeholder="Email"
-        errorMessage={emailErrorMessage}
+        errorMessage={validationErrors.email}
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(value) => handleInputChange(value, setEmail)}
         autoCapitalize="none"
       />
       <Input
         placeholder="Contraseña"
-        errorMessage={passwordErrorMessage}
+        errorMessage={validationErrors.password}
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(value) => handleInputChange(value, setPassword)}
         secureTextEntry
       />
       {loginError && <Text style={styles.error}>{loginError}</Text>}
